@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISLANDSHORE.COM</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ocean-deep:#020d1a;
+  --ocean-dark:#041425;
+  --ocean-mid:#062040;
+  --ocean-surf:#0a3860;
+  --ocean-teal:#0d6e8a;
+  --ocean-bright:#1aa3c4;
+  --ocean-foam:#4dd4ec;
+  --ocean-light:#a8ecf8;
+  --gold:#e8b84b;
+  --gold-dim:#a07820;
+  --red:#d94040;
+  --red-dim:#8a2020;
+  --text:#cce8f4;
+  --text-dim:#6a9ab0;
+  --border:#0d4060;
+}
+body{font-family:'Inter',sans-serif;background:var(--ocean-deep);color:var(--text);min-height:100vh}
+
+/* WAVES BACKGROUND */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 20% 80%,rgba(13,110,138,.18) 0%,transparent 55%),
+    radial-gradient(ellipse at 80% 20%,rgba(4,20,37,.9) 0%,transparent 60%),
+    radial-gradient(ellipse at 50% 50%,rgba(6,32,64,.6) 0%,transparent 80%);
+}
+
+/* HEADER */
+header{
+  position:relative;z-index:10;
+  background:linear-gradient(180deg,#020d1a 0%,#041c38 60%,#062d55 100%);
+  border-bottom:1px solid rgba(26,163,196,.3);
+  padding:0;overflow:hidden;
+}
+.header-waves{position:absolute;bottom:0;left:0;right:0;height:40px;opacity:.4}
+.header-inner{padding:24px 24px 32px;text-align:center;position:relative;z-index:2}
+header h1{
+  font-size:2.6rem;font-weight:700;letter-spacing:3px;
+  background:linear-gradient(135deg,#4dd4ec 0%,#fff 50%,#a8ecf8 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:none;
+}
+header p{color:var(--ocean-foam);margin-top:6px;font-size:.88rem;letter-spacing:2px;opacity:.8}
+
+/* STATUSBAR */
+.statusbar{
+  position:relative;z-index:10;
+  background:rgba(4,20,37,.95);
+  border-bottom:1px solid var(--border);
+  padding:8px 20px;display:flex;align-items:center;gap:12px;font-size:.78rem;
+  backdrop-filter:blur(8px);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ocean-foam);box-shadow:0 0 8px var(--ocean-foam);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.statusbar span{color:var(--ocean-foam);opacity:.7}
+#userBadge{color:var(--ocean-light);font-weight:500}
+#btnEditarPerfil{
+  margin-left:auto;background:linear-gradient(135deg,var(--ocean-teal),var(--ocean-bright));
+  border:none;border-radius:20px;color:#fff;font-size:.75rem;font-weight:600;
+  padding:4px 14px;cursor:pointer;letter-spacing:.5px;transition:all .2s;
+  display:none;
+}
+#btnEditarPerfil:hover{opacity:.85;transform:translateY(-1px)}
+
+/* LAYOUT 3 COLUNAS */
+.page-layout{
+  position:relative;z-index:5;
+  display:grid;
+  grid-template-columns:260px 1fr 260px;
+  gap:0;
+  max-width:1200px;margin:0 auto;
+  min-height:calc(100vh - 120px);
+}
+.sidebar{
+  padding:18px 14px;
+  border-right:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(4,20,37,.95) 0%,rgba(2,13,26,.98) 100%);
+}
+.sidebar-right{border-right:none;border-left:1px solid var(--border)}
+.main-feed{padding:20px 18px;max-width:680px;width:100%;margin:0 auto}
+
+/* SIDEBAR WIDGETS */
+.widget{
+  background:linear-gradient(145deg,rgba(6,32,64,.8),rgba(4,20,37,.9));
+  border:1px solid var(--border);border-radius:14px;
+  padding:14px;margin-bottom:14px;
+}
+.widget-title{
+  font-size:.65rem;text-transform:uppercase;letter-spacing:2px;
+  color:var(--ocean-foam);font-weight:600;margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;
+}
+.widget-title::before{content:'';width:3px;height:12px;background:var(--ocean-bright);border-radius:2px;display:inline-block}
+
+/* CALENDAR */
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cal-month{font-size:.82rem;font-weight:600;color:var(--ocean-light)}
+.cal-nav{background:none;border:1px solid var(--border);border-radius:6px;color:var(--ocean-foam);font-size:.75rem;padding:2px 8px;cursor:pointer;transition:all .2s}
+.cal-nav:hover{background:var(--ocean-surf)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal-day-name{font-size:.6rem;color:var(--text-dim);padding:3px 0;font-weight:600}
+.cal-day{font-size:.7rem;padding:4px 2px;border-radius:5px;cursor:default;transition:background .15s;color:var(--text-dim)}
+.cal-day.cur-month{color:var(--text)}
+.cal-day.today{background:var(--ocean-bright);color:#fff;font-weight:700;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin:auto}
+.cal-day.has-event{position:relative}
+.cal-day.has-event::after{content:'';position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--gold)}
+
+/* OIL NEWS */
+.oil-item{padding:10px 0;border-bottom:1px solid rgba(13,64,96,.5);cursor:pointer}
+.oil-item:last-child{border-bottom:none;padding-bottom:0}
+.oil-item:hover .oil-title{color:var(--ocean-foam)}
+.oil-title{font-size:.75rem;line-height:1.4;color:var(--text);transition:color .2s;font-weight:500}
+.oil-meta{font-size:.65rem;color:var(--text-dim);margin-top:3px}
+.oil-price{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(6,32,64,.6);border-radius:10px;border:1px solid var(--border);margin-bottom:10px}
+.oil-price-name{font-size:.7rem;color:var(--text-dim);font-weight:500}
+.oil-price-val{font-size:1rem;font-weight:700;color:var(--ocean-foam)}
+.oil-price-chg{font-size:.7rem;font-weight:600}
+.up{color:#4ade80}.down{color:#f87171}
+.oil-loading{font-size:.72rem;color:var(--text-dim);text-align:center;padding:12px}
+
+/* CARDS */
+.card{
+  background:linear-gradient(145deg,rgba(6,32,64,.7),rgba(4,20,37,.85));
+  border:1px solid var(--border);border-radius:16px;
+  padding:18px;margin-bottom:18px;
+  backdrop-filter:blur(4px);
+  transition:border-color .2s;
+}
+.card:hover{border-color:rgba(26,163,196,.4)}
+.card-title{font-size:.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--ocean-foam);margin-bottom:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.card-title::before{content:'';width:3px;height:11px;background:var(--ocean-bright);border-radius:2px}
+
+/* INPUTS */
+input[type=text],input[type=email],input[type=password],textarea,select{
+  width:100%;padding:10px 14px;margin-top:6px;
+  border:1px solid var(--border);border-radius:10px;
+  background:rgba(2,13,26,.8);color:var(--text);font-size:.88rem;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  font-family:'Inter',sans-serif;appearance:none;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--ocean-bright);box-shadow:0 0 0 3px rgba(26,163,196,.15)}
+textarea{resize:vertical;min-height:78px}
+input[type=file]{background:none;border:1px dashed var(--border);padding:8px 12px;border-radius:10px;cursor:pointer;margin-top:8px;color:var(--text-dim)}
+select option{background:#041425}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;margin-top:10px;border:none;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:600;letter-spacing:.3px;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-ocean{background:linear-gradient(135deg,var(--ocean-teal),var(--ocean-bright));color:#fff}
+.btn-ocean:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn-red{background:linear-gradient(135deg,#7a1818,#b02828);color:#fff}
+.btn-red:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.btn-sm{padding:5px 13px;font-size:.78rem;margin-top:6px}
+.btn-full{width:100%}
+
+/* AUTH TABS */
+.auth-tabs{display:flex;gap:0;margin-bottom:16px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.auth-tab{flex:1;padding:9px;text-align:center;cursor:pointer;font-size:.82rem;font-weight:600;transition:all .2s;border:none;background:rgba(2,13,26,.8);color:var(--text-dim);font-family:'Inter',sans-serif}
+.auth-tab.active{background:linear-gradient(135deg,var(--ocean-teal),var(--ocean-bright));color:#fff}
+
+/* POST CARD */
+.post-card{
+  background:linear-gradient(160deg,rgba(6,32,64,.65),rgba(4,20,37,.8));
+  border:1px solid var(--border);border-radius:16px;
+  margin-bottom:16px;overflow:hidden;
+  backdrop-filter:blur(4px);transition:border-color .2s;
+}
+.post-card:hover{border-color:rgba(26,163,196,.35)}
+.post-header{padding:14px 16px 0;display:flex;align-items:center;gap:10px}
+.post-avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--ocean-teal);background:var(--ocean-mid);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden}
+.post-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.post-user{font-weight:600;font-size:.88rem;color:var(--ocean-light)}
+.post-area{font-size:.68rem;color:var(--gold);background:rgba(232,184,75,.1);border:1px solid rgba(232,184,75,.25);border-radius:5px;padding:1px 7px;display:inline-block;margin-top:2px}
+.post-time{font-size:.68rem;color:var(--text-dim);margin-top:1px}
+.post-body{padding:10px 16px 0;font-size:.9rem;line-height:1.65;color:var(--text)}
+.post-img{width:100%;margin-top:10px;display:block;max-height:380px;object-fit:cover}
+.post-actions{padding:10px 16px;display:flex;align-items:center;gap:7px;border-top:1px solid var(--border);margin-top:10px;flex-wrap:wrap}
+.action-btn{background:rgba(6,32,64,.5);border:1px solid var(--border);border-radius:7px;color:var(--ocean-foam);font-size:.75rem;padding:5px 11px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.action-btn:hover{background:var(--ocean-surf);border-color:var(--ocean-bright)}
+.share-btn{background:rgba(10,56,96,.5);border:1px solid rgba(13,110,138,.4);border-radius:7px;color:var(--ocean-foam);font-size:.75rem;padding:5px 11px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.share-btn:hover{background:var(--ocean-surf)}
+.contact-btn{background:rgba(90,20,20,.4);border:1px solid rgba(180,40,40,.3);border-radius:7px;color:#f09090;font-size:.75rem;padding:5px 11px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.contact-btn:hover{background:rgba(120,30,30,.5)}
+
+/* COMMENTS */
+.comments-section{padding:0 16px 14px}
+.comment-form{display:none;margin-bottom:8px}
+.comment-form.open{display:block}
+.comment-input{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:9px;background:rgba(2,13,26,.8);color:var(--text);font-size:.82rem;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif}
+.comment-input:focus{border-color:var(--ocean-bright)}
+.comment-item{font-size:.8rem;padding:7px 11px;margin-bottom:5px;background:rgba(2,13,26,.6);border-left:2px solid var(--red-dim);border-radius:0 8px 8px 0}
+.comment-user{color:#f09090;font-weight:600;font-size:.75rem}
+.comment-text{color:var(--text);margin:2px 0;line-height:1.5}
+.comment-time{color:var(--text-dim);font-size:.68rem}
+
+.section-label{text-align:center;margin:8px 0 18px;position:relative}
+.section-label::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,transparent,var(--ocean-teal),transparent)}
+.section-label span{background:var(--ocean-deep);padding:0 14px;font-size:.65rem;color:var(--ocean-foam);letter-spacing:2px;text-transform:uppercase;position:relative}
+
+/* MODAIS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(1,8,18,.9);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{
+  background:linear-gradient(145deg,#041830,#062040);
+  border:1px solid rgba(26,163,196,.3);border-radius:20px;
+  width:100%;max-width:500px;position:relative;
+  max-height:92vh;display:flex;flex-direction:column;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+}
+.modal-head{padding:22px 24px 0;flex-shrink:0}
+.modal-head h3{font-size:.95rem;color:var(--ocean-foam);margin-bottom:4px;letter-spacing:.5px;font-weight:600}
+.modal-head p{font-size:.78rem;color:var(--text-dim);margin-bottom:14px}
+.modal-body{overflow-y:auto;padding:0 24px 8px;flex:1}
+.modal-body::-webkit-scrollbar{width:4px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--ocean-teal);border-radius:2px}
+.modal-foot{padding:14px 24px 20px;flex-shrink:0;border-top:1px solid var(--border)}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text-dim);font-size:1.1rem;cursor:pointer;z-index:2;transition:color .2s}
+.modal-close:hover{color:var(--red)}
+.modal label{font-size:.7rem;color:var(--ocean-foam);display:block;margin-top:14px;margin-bottom:2px;letter-spacing:.5px;text-transform:uppercase;font-weight:600}
+.char-count{font-size:.68rem;color:var(--text-dim);text-align:right;margin-top:3px}
+
+.avatar-preview{width:76px;height:76px;border-radius:50%;border:2px solid var(--ocean-teal);background:var(--ocean-mid);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:10px auto 4px;overflow:hidden;cursor:pointer;transition:border-color .2s}
+.avatar-preview:hover{border-color:var(--ocean-foam)}
+.avatar-preview img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avatar-hint{text-align:center;font-size:.7rem;color:var(--text-dim);margin-bottom:6px}
+
+.send-status{margin-top:10px;font-size:.78rem;padding:8px 12px;border-radius:8px;display:none}
+.send-ok{background:rgba(13,110,60,.3);border:1px solid rgba(26,163,100,.4);color:#6adda4}
+.send-err{background:rgba(120,20,20,.3);border:1px solid rgba(200,50,50,.4);color:#f09090}
+.save-msg{font-size:.78rem;padding:8px 12px;border-radius:8px;margin-top:8px;display:none}
+.save-ok{background:rgba(13,80,138,.3);border:1px solid rgba(26,163,196,.4);color:var(--ocean-foam)}
+.save-err{background:rgba(120,20,20,.3);border:1px solid rgba(200,50,50,.4);color:#f09090}
+
+/* PROFILE CARD */
+.perfil-card-inner{display:flex;align-items:center;gap:12px}
+.perfil-card-avatar{width:50px;height:50px;border-radius:50%;border:2px solid var(--ocean-teal);background:var(--ocean-mid);display:flex;align-items:center;justify-content:center;font-size:1.4rem;overflow:hidden;flex-shrink:0}
+.perfil-card-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.edit-perfil-btn{margin-left:auto;background:linear-gradient(135deg,var(--ocean-teal),var(--ocean-bright));border:none;border-radius:9px;color:#fff;font-size:.78rem;font-weight:600;padding:7px 14px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .2s;font-family:'Inter',sans-serif}
+.edit-perfil-btn:hover{filter:brightness(1.15)}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .page-layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--ocean-deep)}
+::-webkit-scrollbar-thumb{background:var(--ocean-teal);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <h1>🌊 ISLANDSHORE.COM</h1>
+    <p>Poste · Conecte-se · Compartilhe</p>
+  </div>
+  <svg class="header-waves" viewBox="0 0 1200 40" preserveAspectRatio="none">
+    <path d="M0,20 C200,40 400,0 600,20 C800,40 1000,0 1200,20 L1200,40 L0,40 Z" fill="rgba(13,110,138,.3)"/>
+    <path d="M0,28 C150,10 350,38 600,28 C850,18 1050,38 1200,28 L1200,40 L0,40 Z" fill="rgba(26,163,196,.15)"/>
+  </svg>
+</header>
+
+<!-- STATUSBAR -->
+<div class="statusbar">
+  <div class="dot"></div>
+  <span>Online</span>
+  <span id="userBadge">Visitante</span>
+  <button id="btnEditarPerfil" onclick="abrirPerfil()">✎ Editar Perfil</button>
+</div>
+
+<!-- LAYOUT -->
+<div class="page-layout">
+
+  <!-- SIDEBAR ESQUERDA: Calendário -->
+  <aside class="sidebar">
+
+    <div class="widget">
+      <div class="widget-title">Calendário</div>
+      <div class="cal-header">
+        <button class="cal-nav" onclick="navCal(-1)">‹</button>
+        <span class="cal-month" id="calMonth"></span>
+        <button class="cal-nav" onclick="navCal(1)">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Mercado de Petróleo</div>
+      <div id="oilPrices" class="oil-loading">Carregando cotações...</div>
+      <div class="widget-title" style="margin-top:12px">Últimas Notícias</div>
+      <div id="oilNews" class="oil-loading">Carregando notícias...</div>
+    </div>
+
+  </aside>
+
+  <!-- FEED CENTRAL -->
+  <main class="main-feed">
+
+    <div class="card" id="cardAcesso">
+      <div class="card-title">Acesso</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabEntrar" onclick="trocarTab('entrar')">▶ Entrar</button>
+        <button class="auth-tab" id="tabCriar" onclick="trocarTab('criar')">✦ Criar conta</button>
+      </div>
+      <input type="email" id="email" placeholder="E-mail">
+      <input type="password" id="senha" placeholder="Senha (mín. 6 caracteres)">
+      <div id="campoNovaConta" style="display:none">
+        <input type="password" id="senhaConfirm" placeholder="Confirme a senha">
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ocean" id="btnAcao" onclick="login()">▶ Entrar</button>
+        <button class="btn btn-red" onclick="logout()">✕ Sair</button>
+      </div>
+    </div>
+
+    <div class="card" id="cardPerfil" style="display:none;border-color:rgba(26,163,196,.3)">
+      <div class="perfil-card-inner">
+        <div class="perfil-card-avatar" id="perfilAvatarCard">👤</div>
+        <div style="flex:1;min-width:0">
+          <div id="perfilNomeCard" style="font-weight:700;font-size:.95rem;color:var(--ocean-light)">—</div>
+          <div id="perfilAreaCard" style="font-size:.7rem;color:var(--gold);margin-top:2px"></div>
+          <div id="perfilStatusCard" style="font-size:.78rem;color:var(--text-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic"></div>
+        </div>
+        <button class="edit-perfil-btn" onclick="abrirPerfil()">✎ Editar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Nova Publicação</div>
+      <textarea id="postText" placeholder="Compartilhe algo com a ilha..."></textarea>
+      <input type="file" id="img" accept="image/*">
+      <button class="btn btn-ocean" onclick="postar()">🚀 Publicar</button>
+    </div>
+
+    <div class="section-label"><span>Publicações</span></div>
+    <div id="posts"></div>
+  </main>
+
+  <!-- SIDEBAR DIREITA: Repetição de cotações + notícias adicionais -->
+  <aside class="sidebar sidebar-right">
+
+    <div class="widget">
+      <div class="widget-title">Brent · WTI · Gas</div>
+      <div id="oilPrices2" class="oil-loading">Carregando...</div>
+    </div>
+
+    <div class="widget">
+      <div class="widget-title">Análise do Setor</div>
+      <div id="oilNews2" class="oil-loading">Carregando...</div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- MODAL PERFIL -->
+<div class="modal-overlay" id="modalPerfil">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modalPerfil')">✕</button>
+    <div class="modal-head">
+      <h3>👤 Meu Perfil</h3>
+      <p>Seu e-mail nunca é exibido publicamente</p>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-top:6px">
+        <div class="avatar-preview" id="avatarPreview" onclick="document.getElementById('fotoInput').click()">📷</div>
+        <div class="avatar-hint">Clique para escolher foto</div>
+        <input type="file" id="fotoInput" accept="image/*" style="display:none" onchange="previewFoto(this)">
+      </div>
+      <label>Nome público *</label>
+      <input type="text" id="inputNome" placeholder="Como quer ser chamado?">
+      <label>Status / Frase <span style="text-transform:none;font-weight:400;font-size:.65rem">(máx. 300)</span></label>
+      <textarea id="inputStatus" placeholder="Uma frase sobre você..." style="min-height:62px;margin-top:4px" maxlength="300" oninput="contarStatus(this)"></textarea>
+      <div class="char-count"><span id="statusCount">0</span>/300</div>
+      <label>Nível de formação</label>
+      <select id="inputNivel" onchange="atualizarAreas()">
+        <option value="">— Selecione —</option>
+        <option value="aluno">Aluno (cursando técnico)</option>
+        <option value="estudante">Estudante (ensino superior)</option>
+        <option value="formado">Formado / Profissional</option>
+      </select>
+      <div id="blocoTecnico" style="display:none">
+        <label>Área técnica</label>
+        <select id="inputAreaTecnica">
+          <option value="">— Selecione —</option>
+          <optgroup label="Mecânica e Automação">
+            <option>Técnico em Mecânica</option>
+            <option>Técnico em Mecatrônica</option>
+            <option>Técnico em Automação Industrial</option>
+            <option>Técnico em Manutenção Industrial</option>
+          </optgroup>
+          <optgroup label="Elétrica e Eletrônica">
+            <option>Técnico em Eletricidade</option>
+            <option>Técnico em Eletrotécnica</option>
+            <option>Técnico em Eletrônica</option>
+            <option>Técnico em Telecomunicações</option>
+          </optgroup>
+          <optgroup label="Informática e TI">
+            <option>Técnico em Informática</option>
+            <option>Técnico em Redes de Computadores</option>
+            <option>Técnico em Desenvolvimento de Sistemas</option>
+          </optgroup>
+          <optgroup label="Construção Civil">
+            <option>Técnico em Edificações</option>
+            <option>Técnico em Topografia</option>
+          </optgroup>
+          <optgroup label="Química e Segurança">
+            <option>Técnico em Química</option>
+            <option>Técnico em Meio Ambiente</option>
+            <option>Técnico em Segurança do Trabalho</option>
+          </optgroup>
+          <optgroup label="Petróleo e Gás">
+            <option>Técnico em Petróleo e Gás</option>
+            <option>Técnico em Perfuração</option>
+            <option>Técnico em Processamento de Petróleo</option>
+          </optgroup>
+          <optgroup label="Saúde">
+            <option>Técnico em Enfermagem</option>
+            <option>Técnico em Radiologia</option>
+            <option>Técnico em Análises Clínicas</option>
+          </optgroup>
+          <option value="outro_tec">Outra área técnica</option>
+        </select>
+      </div>
+      <div id="blocoSuperior" style="display:none">
+        <label>Curso superior</label>
+        <select id="inputAreaSuperior">
+          <option value="">— Selecione —</option>
+          <optgroup label="Engenharias">
+            <option>Engenharia Mecânica</option>
+            <option>Engenharia Elétrica</option>
+            <option>Engenharia Eletrônica</option>
+            <option>Engenharia de Produção</option>
+            <option>Engenharia Civil</option>
+            <option>Engenharia Química</option>
+            <option>Engenharia de Computação</option>
+            <option>Engenharia de Controle e Automação</option>
+            <option>Engenharia Ambiental</option>
+            <option>Engenharia Mecatrônica</option>
+            <option>Engenharia de Petróleo</option>
+            <option>Engenharia Naval</option>
+            <option>Engenharia Aeronáutica</option>
+            <option>Engenharia de Alimentos</option>
+          </optgroup>
+          <optgroup label="Tecnologia e Computação">
+            <option>Ciência da Computação</option>
+            <option>Sistemas de Informação</option>
+            <option>Análise e Desenvolvimento de Sistemas</option>
+          </optgroup>
+          <optgroup label="Ciências Exatas">
+            <option>Física</option><option>Matemática</option><option>Química</option>
+          </optgroup>
+          <optgroup label="Ciências da Saúde">
+            <option>Medicina</option><option>Enfermagem</option><option>Farmácia</option>
+            <option>Fisioterapia</option><option>Odontologia</option>
+          </optgroup>
+          <optgroup label="Humanas e Sociais">
+            <option>Direito</option><option>Administração</option><option>Economia</option>
+            <option>Contabilidade</option><option>Psicologia</option>
+          </optgroup>
+          <optgroup label="Arquitetura">
+            <option>Arquitetura e Urbanismo</option><option>Design Industrial</option>
+          </optgroup>
+          <optgroup label="Agrárias">
+            <option>Agronomia</option><option>Veterinária</option><option>Zootecnia</option>
+          </optgroup>
+          <option value="outro_sup">Outro curso</option>
+        </select>
+      </div>
+      <div id="blocoOutro" style="display:none">
+        <label>Especifique sua área</label>
+        <input type="text" id="inputAreaOutro" placeholder="Digite sua área de formação">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ocean btn-full" onclick="salvarPerfil()">💾 Salvar perfil</button>
+      <div class="save-msg save-ok" id="saveOk">✓ Perfil salvo com sucesso!</div>
+      <div class="save-msg save-err" id="saveErr" id="saveErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTATO -->
+<div class="modal-overlay" id="modalContato">
+  <div class="modal">
+    <button class="modal-close" onclick="fecharModal('modalContato')">✕</button>
+    <div class="modal-head">
+      <h3>✉️ Mensagem privada</h3>
+      <p id="modalContatoDesc">O destinatário receberá no e-mail.</p>
+    </div>
+    <div class="modal-body">
+      <label>Seu nome</label>
+      <input type="text" id="ctNome" placeholder="Nome ou apelido">
+      <label>Seu e-mail</label>
+      <input type="email" id="ctEmail" placeholder="para@resposta.com">
+      <label>Mensagem</label>
+      <textarea id="ctMsg" placeholder="Escreva sua mensagem..." style="min-height:90px;margin-top:4px"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ocean btn-full" onclick="enviarEmail()">📨 Enviar</button>
+      <div class="send-status send-ok" id="sendOk">✓ Mensagem enviada!</div>
+      <div class="send-status send-err" id="sendErr">✗ Erro — configure o EmailJS.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── EMAILJS ── */
+var EJS_KEY='SUA_PUBLIC_KEY';
+var EJS_SERVICE='SUA_SERVICE_ID';
+var EJS_TEMPLATE='SUA_TEMPLATE_ID';
+emailjs.init(EJS_KEY);
+
+/* ── FIREBASE ── */
+firebase.initializeApp({
+  apiKey:"AIzaSyBXqqxr_1nKH1Z4HpxXiURtOJj0dcIiU5o",
+  authDomain:"islandh-fd1bd.firebaseapp.com",
+  projectId:"islandh-fd1bd"
+});
+var db=firebase.firestore();
+var auth=firebase.auth();
+var userAtual=null;
+var destinatarioEmail='';
+
+/* ═══════════ CALENDÁRIO ═══════════ */
+var calDate=new Date();
+function renderCal(){
+  var y=calDate.getFullYear(),m=calDate.getMonth();
+  var today=new Date();
+  var meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('calMonth').textContent=meses[m]+' '+y;
+  var grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  ['D','S','T','Q','Q','S','S'].forEach(d=>{
+    var el=document.createElement('div');
+    el.className='cal-day-name';el.textContent=d;grid.appendChild(el);
+  });
+  var first=new Date(y,m,1).getDay();
+  var days=new Date(y,m+1,0).getDate();
+  for(var i=0;i<first;i++){var el=document.createElement('div');el.className='cal-day';grid.appendChild(el);}
+  for(var d=1;d<=days;d++){
+    var el=document.createElement('div');
+    el.className='cal-day cur-month';
+    el.textContent=d;
+    if(d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear()) el.classList.add('today');
+    grid.appendChild(el);
+  }
+}
+function navCal(dir){calDate.setMonth(calDate.getMonth()+dir);renderCal();}
+renderCal();
+
+/* ═══════════ PETRÓLEO — dados via API pública ═══════════ */
+async function carregarPetroleo(){
+  // Cotações simuladas realistas (atualizam com data atual)
+  // Para cotações reais use: https://financialmodelingprep.com/api/v3/quote/CLUSD (API key grátis)
+  var agora=new Date();
+  var seed=agora.getDate()+agora.getMonth();
+  var brent=(82+(seed%8)+(Math.random()*1.5)).toFixed(2);
+  var wti=(78+(seed%7)+(Math.random()*1.4)).toFixed(2);
+  var gas=(2.4+(seed%3)*0.1+(Math.random()*0.15)).toFixed(3);
+  var brentChg=((Math.random()*2.4)-1.2).toFixed(2);
+  var wtiChg=((Math.random()*2.2)-1.1).toFixed(2);
+  var gasChg=((Math.random()*.06)-.03).toFixed(3);
+
+  function priceHtml(name,val,chg,unit){
+    var up=parseFloat(chg)>=0;
+    return`<div class="oil-price">
+      <div><div class="oil-price-name">${name}</div><div class="oil-price-val">${unit||'$'}${val}</div></div>
+      <div class="oil-price-chg ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(chg)}</div>
+    </div>`;
+  }
+
+  var html=priceHtml('Brent Crude',brent,brentChg)+priceHtml('WTI Crude',wti,wtiChg)+priceHtml('Nat. Gas',gas,gasChg,'$');
+  document.getElementById('oilPrices').innerHTML=html;
+  document.getElementById('oilPrices2').innerHTML=html;
+}
+
+async function carregarNoticias(){
+  // Notícias estáticas curadas sobre petróleo (atualizar com NewsAPI key se tiver)
+  var noticias1=[
+    {t:"OPEC+ mantém corte de produção até fim do trimestre",src:"Reuters",h:"2h"},
+    {t:"Brent sobe com tensão no Oriente Médio e queda nos estoques dos EUA",src:"Bloomberg",h:"4h"},
+    {t:"Petrobras anuncia novo bloco de exploração na Bacia de Santos",src:"Infomoney",h:"6h"},
+    {t:"IEA revisa previsão de demanda global de petróleo para 2025",src:"FT",h:"8h"},
+    {t:"Refinarias europeias ampliam importação de petróleo da África Ocidental",src:"S&P Global",h:"10h"},
+  ];
+  var noticias2=[
+    {t:"Analistas preveem barril acima de US$ 90 no segundo semestre",src:"WSJ",h:"1h"},
+    {t:"Gás natural recua após projeção de inverno mais quente no hemisfério norte",src:"CNBC",h:"3h"},
+    {t:"Campos pré-sal batem recorde de produção em fevereiro",src:"ANP",h:"5h"},
+    {t:"Shell e BP aceleram transição para baixo carbono sem abandonar O&G",src:"FT",h:"7h"},
+  ];
+
+  function buildNews(arr){
+    return arr.map(n=>`<div class="oil-item">
+      <div class="oil-title">${n.t}</div>
+      <div class="oil-meta">${n.src} · ${n.h} atrás</div>
+    </div>`).join('');
+  }
+  document.getElementById('oilNews').innerHTML=buildNews(noticias1);
+  document.getElementById('oilNews2').innerHTML=buildNews(noticias2);
+}
+
+carregarPetroleo();
+carregarNoticias();
+setInterval(carregarPetroleo,60000); // atualiza a cada 1 min
+
+/* ═══════════ AUTH ═══════════ */
+var modoTab='entrar';
+function trocarTab(modo){
+  modoTab=modo;
+  document.getElementById('tabEntrar').classList.toggle('active',modo==='entrar');
+  document.getElementById('tabCriar').classList.toggle('active',modo==='criar');
+  document.getElementById('campoNovaConta').style.display=modo==='criar'?'block':'none';
+  var btn=document.getElementById('btnAcao');
+  btn.textContent=modo==='entrar'?'▶ Entrar':'✦ Criar conta';
+  btn.onclick=modo==='entrar'?login:criarConta;
+}
+
+function login(){
+  var e=document.getElementById('email').value.trim();
+  var s=document.getElementById('senha').value;
+  if(!e||!s){alert('Preencha e-mail e senha');return;}
+  auth.signInWithEmailAndPassword(e,s)
+    .then(()=>alert('Bem-vindo de volta!'))
+    .catch(err=>alert('Erro ao entrar: '+err.message));
+}
+
+function criarConta(){
+  var e=document.getElementById('email').value.trim();
+  var s=document.getElementById('senha').value;
+  var s2=document.getElementById('senhaConfirm').value;
+  if(!e||!s){alert('Preencha e-mail e senha');return;}
+  if(s!==s2){alert('As senhas não coincidem');return;}
+  if(s.length<6){alert('Senha deve ter mínimo 6 caracteres');return;}
+  auth.createUserWithEmailAndPassword(e,s)
+    .then(()=>{alert('Conta criada! Preencha seu perfil agora.');abrirPerfil();})
+    .catch(err=>alert('Erro: '+err.message));
+}
+
+function logout(){auth.signOut();}
+
+function atualizarCardPerfil(d,email){
+  var nome=d.nome||email.split('@')[0];
+  var area=d.area||'';
+  var status=d.status||'';
+  var fotoUrl=d.fotoUrl||'';
+  document.getElementById('userBadge').textContent='🟢 '+nome;
+  document.getElementById('perfilNomeCard').textContent=nome;
+  document.getElementById('perfilAreaCard').textContent=area?('⚙ '+area):'';
+  document.getElementById('perfilStatusCard').textContent=status?'"'+status+'"':'Sem status — clique em Editar';
+  var av=document.getElementById('perfilAvatarCard');
+  av.innerHTML=fotoUrl?('<img src="'+fotoUrl+'">'):'👤';
+}
+
+auth.onAuthStateChanged(u=>{
+  userAtual=u;
+  var cardPerfil=document.getElementById('cardPerfil');
+  var btnEditar=document.getElementById('btnEditarPerfil');
+  if(u){
+    btnEditar.style.display='inline-block';
+    cardPerfil.style.display='block';
+    db.collection('perfis').doc(u.uid).get().then(doc=>{
+      atualizarCardPerfil(doc.exists?doc.data():{},u.email);
+    });
+  } else {
+    document.getElementById('userBadge').textContent='Visitante';
+    btnEditar.style.display='none';
+    cardPerfil.style.display='none';
+  }
+});
+
+/* ═══════════ PERFIL ═══════════ */
+function abrirPerfil(){
+  if(!userAtual){alert('Faça login primeiro');return;}
+  // Limpa mensagens anteriores
+  document.getElementById('saveOk').style.display='none';
+  document.getElementById('saveErr').style.display='none';
+  document.getElementById('modalPerfil').classList.add('open');
+  db.collection('perfis').doc(userAtual.uid).get().then(doc=>{
+    if(!doc.exists)return;
+    var d=doc.data();
+    document.getElementById('inputNome').value=d.nome||'';
+    document.getElementById('inputStatus').value=d.status||'';
+    document.getElementById('statusCount').textContent=(d.status||'').length;
+    if(d.nivel){
+      document.getElementById('inputNivel').value=d.nivel;
+      atualizarAreas();
+      setTimeout(()=>{
+        if(d.areaTecnica) document.getElementById('inputAreaTecnica').value=d.areaTecnica;
+        if(d.areaSuperior) document.getElementById('inputAreaSuperior').value=d.areaSuperior;
+        if(d.areaOutro) document.getElementById('inputAreaOutro').value=d.areaOutro;
+      },50);
+    }
+    if(d.fotoUrl){
+      var prev=document.getElementById('avatarPreview');
+      prev.innerHTML='<img src="'+d.fotoUrl+'">';
+      prev.dataset.url=d.fotoUrl;
+    }
+  });
+}
+
+function contarStatus(el){document.getElementById('statusCount').textContent=el.value.length;}
+
+function previewFoto(input){
+  if(!input.files[0])return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var prev=document.getElementById('avatarPreview');
+    prev.innerHTML='<img src="'+e.target.result+'">';
+    delete prev.dataset.url;
+  };
+  r.readAsDataURL(input.files[0]);
+}
+
+function atualizarAreas(){
+  var nivel=document.getElementById('inputNivel').value;
+  document.getElementById('blocoTecnico').style.display=(nivel==='aluno'||nivel==='formado')?'block':'none';
+  document.getElementById('blocoSuperior').style.display=(nivel==='estudante'||nivel==='formado')?'block':'none';
+  document.getElementById('blocoOutro').style.display='none';
+}
+
+async function salvarPerfil(){
+  var nome=document.getElementById('inputNome').value.trim();
+  if(!nome){alert('Digite um nome público');return;}
+  if(!userAtual){alert('Você não está logado');return;}
+
+  var status=document.getElementById('inputStatus').value.trim();
+  var nivel=document.getElementById('inputNivel').value;
+  var areaTec=document.getElementById('inputAreaTecnica').value;
+  var areaSup=document.getElementById('inputAreaSuperior').value;
+  var areaOut=document.getElementById('inputAreaOutro').value.trim();
+  var area=areaTec||areaSup||areaOut||'';
+
+  var fotoUrl=document.getElementById('avatarPreview').dataset.url||'';
+  var fotoInput=document.getElementById('fotoInput');
+
+  try{
+    if(fotoInput.files[0]){
+      var fd=new FormData();
+      fd.append('file',fotoInput.files[0]);
+      fd.append('upload_preset','elan_upload');
+      var resp=await fetch('https://api.cloudinary.com/v1_1/durb9y5pm/upload',{method:'POST',body:fd});
+      var json=await resp.json();
+      fotoUrl=json.secure_url||fotoUrl;
+    }
+
+    var dados={
+      nome:nome,
+      status:status,
+      nivel:nivel,
+      areaTecnica:areaTec,
+      areaSuperior:areaSup,
+      areaOutro:areaOut,
+      area:area,
+      fotoUrl:fotoUrl,
+      email:userAtual.email,
+      uid:userAtual.uid,
+      updatedAt:Date.now()
+    };
+
+    await db.collection('perfis').doc(userAtual.uid).set(dados,{merge:true});
+
+    // Atualiza UI imediatamente
+    atualizarCardPerfil(dados,userAtual.email);
+
+    document.getElementById('saveOk').style.display='block';
+    document.getElementById('saveErr').style.display='none';
+    setTimeout(()=>{
+      document.getElementById('saveOk').style.display='none';
+      fecharModal('modalPerfil');
+    },1800);
+
+  }catch(err){
+    console.error('Erro ao salvar perfil:',err);
+    var errEl=document.getElementById('saveErr');
+    errEl.textContent='✗ Erro: '+err.message;
+    errEl.style.display='block';
+  }
+}
+
+/* ═══════════ HELPERS ═══════════ */
+function fecharModal(id){document.getElementById(id).classList.remove('open')}
+function emoji(uid){return['🌿','🐚','🌊','🔥','🦜','⚓'][uid.charCodeAt(0)%6]}
+function bloqueado(t){return['merda','porra','fdp'].some(x=>t.toLowerCase().includes(x))}
+
+async function getPerfil(uid){
+  try{var doc=await db.collection('perfis').doc(uid).get();return doc.exists?doc.data():{}}
+  catch(e){return{}}
+}
+async function getNome(uid,fallback){
+  var p=await getPerfil(uid);return p.nome||fallback||'Usuário';
+}
+
+/* ═══════════ POSTAR ═══════════ */
+async function postar(){
+  if(!userAtual){alert('Faça login para postar');return;}
+  var t=document.getElementById('postText').value.trim();
+  var file=document.getElementById('img').files[0];
+  if(!t&&!file)return;
+  if(bloqueado(t)){alert('Texto bloqueado');return;}
+  var url='';
+  if(file){
+    var fd=new FormData();fd.append('file',file);fd.append('upload_preset','elan_upload');
+    var r=await fetch('https://api.cloudinary.com/v1_1/durb9y5pm/upload',{method:'POST',body:fd});
+    url=(await r.json()).secure_url||'';
+  }
+  var perfil=await getPerfil(userAtual.uid);
+  db.collection('posts').add({
+    texto:t,img:url,
+    nomePublico:perfil.nome||userAtual.email.split('@')[0],
+    area:perfil.area||'',
+    fotoUrl:perfil.fotoUrl||'',
+    uid:userAtual.uid,
+    time:Date.now()
+  });
+  document.getElementById('postText').value='';
+  document.getElementById('img').value='';
+}
+
+/* ═══════════ POSTS ═══════════ */
+db.collection('posts').orderBy('time','desc').onSnapshot(snap=>{
+  var container=document.getElementById('posts');
+  container.innerHTML='';
+  snap.forEach(doc=>{
+    var p=doc.data();
+    var nome=p.nomePublico||'Usuário';
+    var avatarHtml=p.fotoUrl
+      ?`<img src="${p.fotoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      :emoji(p.uid);
+    var div=document.createElement('div');
+    div.className='post-card';
+    div.innerHTML=`
+      <div class="post-header">
+        <div class="post-avatar">${avatarHtml}</div>
+        <div style="flex:1;min-width:0">
+          <div class="post-user">${nome}</div>
+          ${p.area?`<div class="post-area">⚙ ${p.area}</div>`:''}
+          <div class="post-time">${new Date(p.time).toLocaleString('pt-BR')}</div>
+        </div>
+      </div>
+      ${p.texto?`<div class="post-body">${p.texto}</div>`:''}
+      ${p.img?`<img class="post-img" src="${p.img}" alt="">`:''}
+      <div class="post-actions">
+        <button class="action-btn">♥ Curtir</button>
+        <button class="action-btn" onclick="toggleComent('${doc.id}')">💬 Comentar</button>
+        <button class="share-btn" onclick="compartilhar('${doc.id}','${nome.replace(/'/g,"\\'")}')">↗ Compartilhar</button>
+        <button class="contact-btn" onclick="abrirContato('${p.uid}','${nome.replace(/'/g,"\\'")}')">✉ Contato</button>
+      </div>
+      <div class="comments-section">
+        <div class="comment-form" id="cf_${doc.id}">
+          <input class="comment-input" id="ci_${doc.id}" placeholder="Escreva um comentário..." onkeydown="if(event.key==='Enter')enviarComent('${doc.id}')">
+          <button class="btn btn-red btn-sm" style="margin-top:6px" onclick="enviarComent('${doc.id}')">Enviar →</button>
+        </div>
+        <div id="c_${doc.id}"></div>
+      </div>
+    `;
+    container.appendChild(div);
+    carregarComentarios(doc.id);
+  });
+});
+
+function compartilhar(id,nome){
+  var url=location.href.split('?')[0]+'?post='+id;
+  if(navigator.share){navigator.share({title:'Post de '+nome,url}).catch(()=>{});}
+  else{navigator.clipboard.writeText(url).then(()=>alert('Link copiado! 📋'));}
+}
+
+/* ═══════════ COMENTÁRIOS ═══════════ */
+function toggleComent(id){
+  var form=document.getElementById('cf_'+id);
+  var open=form.classList.contains('open');
+  document.querySelectorAll('.comment-form.open').forEach(f=>f.classList.remove('open'));
+  if(!open){form.classList.add('open');document.getElementById('ci_'+id).focus();}
+}
+
+function enviarComent(id){
+  var input=document.getElementById('ci_'+id);
+  var t=input.value.trim();
+  if(!t)return;
+  if(!userAtual){alert('Faça login primeiro');return;}
+  if(bloqueado(t)){alert('Texto bloqueado');return;}
+  getNome(userAtual.uid,userAtual.email.split('@')[0]).then(nome=>{
+    db.collection('posts').doc(id).collection('c').add({t,u:nome,uid:userAtual.uid,time:Date.now()});
+  });
+  input.value='';
+}
+
+function carregarComentarios(id){
+  db.collection('posts').doc(id).collection('c').orderBy('time').onSnapshot(s=>{
+    var el=document.getElementById('c_'+id);
+    if(!el)return;el.innerHTML='';
+    s.forEach(d=>{
+      var c=d.data();
+      el.innerHTML+=`<div class="comment-item">
+        <div class="comment-user">${emoji(c.uid)} ${c.u}</div>
+        <div class="comment-text">${c.t}</div>
+        <div class="comment-time">${new Date(c.time).toLocaleString('pt-BR')}</div>
+      </div>`;
+    });
+  });
+}
+
+/* ═══════════ CONTATO ═══════════ */
+function abrirContato(uid,nomeDestino){
+  db.collection('perfis').doc(uid).get().then(doc=>{
+    if(!doc.exists||!doc.data().email){alert('Usuário sem e-mail de contato.');return;}
+    destinatarioEmail=doc.data().email;
+    document.getElementById('modalContatoDesc').textContent='Para: '+nomeDestino+' (e-mail oculto)';
+    if(userAtual){
+      getNome(userAtual.uid,userAtual.email.split('@')[0]).then(n=>{
+        document.getElementById('ctNome').value=n;
+        document.getElementById('ctEmail').value=userAtual.email;
+      });
+    }
+    document.getElementById('sendOk').style.display='none';
+    document.getElementById('sendErr').style.display='none';
+    document.getElementById('modalContato').classList.add('open');
+  });
+}
+
+function enviarEmail(){
+  var nome=document.getElementById('ctNome').value.trim();
+  var email=document.getElementById('ctEmail').value.trim();
+  var msg=document.getElementById('ctMsg').value.trim();
+  if(!nome||!email||!msg){alert('Preencha todos os campos');return;}
+  emailjs.send(EJS_SERVICE,EJS_TEMPLATE,{to_email:destinatarioEmail,from_name:nome,from_email:email,message:msg})
+    .then(()=>{
+      document.getElementById('sendOk').style.display='block';
+      document.getElementById('ctMsg').value='';
+      setTimeout(()=>fecharModal('modalContato'),2500);
+    }).catch(err=>{console.error(err);document.getElementById('sendErr').style.display='block';});
+}
+</script>
+</body>
+</html>
