@@ -260,8 +260,95 @@ select option{background:#041425}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:var(--ocean-deep)}
 ::-webkit-scrollbar-thumb{background:var(--ocean-teal);border-radius:3px}
+
+
+footer{
+  margin-top:40px;
+  padding:25px 20px;
+  text-align:center;
+  background:linear-gradient(180deg,#020d1a,#041c38);
+  border-top:1px solid rgba(26,163,196,.3);
+  color:var(--ocean-foam);
+}
+
+footer p{
+  font-size:.9rem;
+  letter-spacing:.5px;
+  margin:0;
+  opacity:.9;
+}
+
+footer small{
+  display:block;
+  margin-top:8px;
+  font-size:.7rem;
+  color:var(--text-dim);
+}
+footer{
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  z-index:999;
+}
+footer{
+  background:linear-gradient(180deg,#020d1a,#041c38);
+  border-top:1px solid rgba(26,163,196,.3);
+  padding:25px 20px;
+  text-align:center;
+}
+
+.footer-frase{
+  font-size:.9rem;
+  color:var(--ocean-foam);
+  margin-bottom:12px;
+  opacity:.9;
+}
+
+.footer-links{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+}
+
+.footer-links a{
+  color:var(--ocean-bright);
+  text-decoration:none;
+  font-size:.8rem;
+  transition:.2s;
+}
+
+.footer-links a:hover{
+  color:#fff;
+  transform:translateY(-2px);
+}
+
+footer small{
+  font-size:.7rem;
+  color:var(--text-dim);
+}
 </style>
 </head>
+
+<footer>
+  <div class="footer-content">
+
+    <p class="footer-frase">
+      🌊 "Conectando tecnologia, dados e operações offshore em uma única plataforma digital."
+    </p>
+
+    <div class="footer-links">
+      <a href="https://www.linkedin.com/in/elan-teixeira-a94b35235" target="_blank">LinkedIn </a>
+      <a href="mailto:seuemail@email.com">📧 Contato</a>
+      <a href="https://github.com/elanteixeira" target="_blank" rel="noopener noreferrer">💻 GitHub</a>
+    </div>
+
+    <small>© 2026 ISLANDSHORE.COM — Desenvolvido por Elan Teixeira</small>
+
+  </div>
+</footer>
 <body>
 
 <!-- HEADER -->
@@ -948,4 +1035,6 @@ function enviarEmail(){
 }
 </script>
 </body>
+ 
+
 </html>
